@@ -1,17 +1,53 @@
 class Product {
-  // title = 'DEFAULT';
-  // imageUrl;
-  // description;
-  // price;
   constructor(title, imageUrl, description, price) {
     this.title = title;
     this.imageUrl = imageUrl;
     this.description = description;
     this.price = price;
+    // title = 'DEFAULT';
+    // imageUrl;
+    // description;
+    // price;
   }
 }
 
-class ShoppingCart {
+class ElementAttribute {
+  constructor(attributeName, attributeValue) {
+    this.name = attributeName;
+    this.value = attributeValue;
+  }
+}
+
+class Component {
+  constructor(renderHookId, shouldRender = true) {
+    this.hookId = renderHookId;
+    if (shouldRender) {
+      this.render();
+    }
+  }
+
+  render() {}
+
+  createRootElement(tag, cssClasses, attributes) {
+    const rootElement = document.createElement(tag);
+    if (cssClasses) {
+      rootElement.className = cssClasses;
+    }
+    if (attributes && attributes.length > 0) {
+      for (const attribute of attributes) {
+        rootElement.setAttribute(attribute.name, attribute.value);
+      }
+    }
+    document.getElementById(this.hookId).append(rootElement);
+    return rootElement;
+  }
+}
+
+class ShoppingCart extends Component {
+  constructor(renderHookId) {
+    super(renderHookId);
+  }
+
   items = [];
 
   addProduct(product) {
@@ -23,26 +59,28 @@ class ShoppingCart {
   }
 
   render() {
-    const cartElement = document.createElement('section');
+    const cartElement = this.createRootElement('section', 'cart');
     cartElement.innerHTML = `
 			<h2>Total: \$${0}</h2>
 			<button>Order Now!</button>
 		`;
-    cartElement.className = 'cart';
     this.totalOutput = cartElement.querySelector('h2');
-    return cartElement;
   }
 }
 
-class ProductItem {
-  constructor(product) {
+class ProductItem extends Component {
+  constructor(product, renderHookId) {
+    super(renderHookId, false);
     this.product = product;
+    this.render();
   }
+
   addToCard() {
     App.addProductToCart(this.product);
   }
+
   render() {
-    const productElement = document.createElement('li');
+    const productElement = this.createRootElement('li', 'product-item');
     const { title, price, description, imageUrl } = this.product;
     productElement.className = 'product-item';
     productElement.innerHTML = `
@@ -58,50 +96,59 @@ class ProductItem {
 			`;
     const addCartButton = productElement.querySelector('button');
     addCartButton.addEventListener('click', this.addToCard.bind(this));
-    return productElement;
   }
 }
 
-class ProductList {
-  constructor() {}
-  products = [
-    new Product(
-      'Pillow',
-      'https://cdn.shopify.com/s/files/1/2509/4402/products/11-2019_S4A_Supreme_Pillow1_Standard_PDP_Retouched_300dpi_RGB_2x3_M.jpg?v=1583255150',
-      'A soft pillow!',
-      19.99
-    ),
-    new Product(
-      'A Carpet',
-      'https://www.ulcdn.net/images/products/216237/slide/1332x726/Cameroon_Carpet_1.jpg?1539757363',
-      'A carpet which you might like - or not.',
-      89.99
-    ),
-  ];
-  render() {
-    const productListElement = document.createElement('ul');
-    productListElement.className = 'product-list';
+class ProductList extends Component {
+  constructor(renderHookId) {
+    super(renderHookId);
+    this.fetchProducts();
+  }
+
+  products = [];
+
+  fetchProducts() {
+    this.products = [
+      new Product(
+        'Pillow',
+        'https://cdn.shopify.com/s/files/1/2509/4402/products/11-2019_S4A_Supreme_Pillow1_Standard_PDP_Retouched_300dpi_RGB_2x3_M.jpg?v=1583255150',
+        'A soft pillow!',
+        19.99
+      ),
+      new Product(
+        'A Carpet',
+        'https://www.ulcdn.net/images/products/216237/slide/1332x726/Cameroon_Carpet_1.jpg?1539757363',
+        'A carpet which you might like - or not.',
+        89.99
+      ),
+    ];
+    this.renderProducts();
+  }
+
+  renderProducts() {
     this.products.forEach(product => {
-      const productItem = new ProductItem(product);
-      const productElement = productItem.render();
-      productListElement.append(productElement);
+      new ProductItem(product, 'prod-list');
     });
-    return productListElement;
+  }
+
+  render() {
+    this.createRootElement('ul', 'product-list', [
+      new ElementAttribute('id', 'prod-list'),
+    ]);
+
+    if (this.products && this.products.length > 0) {
+      this.renderProducts();
+    }
   }
 }
 
-class Shop {
+class Shop extends Component {
+  constructor() {
+    super();
+  }
   render() {
-    const renderHook = document.getElementById('app');
-
-    this.shoppingCart = new ShoppingCart();
-    const shoppingCartElement = this.shoppingCart.render();
-
-    const productList = new ProductList();
-    const productListElement = productList.render();
-
-    renderHook.append(shoppingCartElement);
-    renderHook.append(productListElement);
+    this.shoppingCart = new ShoppingCart('app');
+    new ProductList('app');
   }
 }
 
@@ -110,7 +157,6 @@ class App {
 
   static init() {
     const shop = new Shop();
-    shop.render();
     this.shoppingCart = shop.shoppingCart;
   }
 
