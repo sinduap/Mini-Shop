@@ -107,8 +107,16 @@ class ShoppingCart extends Component {
   }
 
   orderProducts() {
-    console.log('Ordering product....');
     console.log(this.items);
+    if (this.items.length) {
+      let text = '';
+      for (let item of this.items) {
+        text += `
+        item: ${item.title} price:\$${item.price}`;
+      }
+      alert(`You purchased 
+      ${text}`);
+    } else return;
   }
 
   render() {
